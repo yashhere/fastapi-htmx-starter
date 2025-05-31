@@ -1,3 +1,5 @@
+import logging
+from datetime import datetime
 from typing import TYPE_CHECKING, AsyncGenerator, List
 from uuid import UUID
 
@@ -7,14 +9,17 @@ from fastapi_users.db import (
     SQLAlchemyBaseUserTableUUID,
     SQLAlchemyUserDatabase,
 )
+from sqlalchemy import DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config import settings
 from app.core.database import Base, get_db
 
 if TYPE_CHECKING:
     from app.models.item import Item
+
+logger = logging.getLogger(__name__)
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
@@ -23,6 +28,10 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     # application here, for example:
     # first_name: Mapped[str | None] = mapped_column(String(length=50))
     # last_name: Mapped[str | None] = mapped_column(String(length=50))
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+    )
     items: Mapped[List["Item"]] = relationship(
         "Item",
         back_populates="owner",
@@ -44,7 +53,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
         user: User,
         request: Request | None = None,
     ) -> None:
-        print(f"User {user.id} has registered.")
+        logger.info("User %s (%s) has registered successfully.", user.id, user.email)
 
     async def on_after_forgot_password(
         self,
@@ -52,7 +61,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
         token: str,
         request: Request | None = None,
     ) -> None:
-        print(f"User {user.id} has forgot their password. " f"Reset token: {token}")
+        logger.info("User %s (%s) requested password reset.", user.id, user.email)
 
     async def on_after_request_verify(
         self,
@@ -60,10 +69,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
         token: str,
         request: Request | None = None,
     ) -> None:
-        print(
-            f"Verification requested for user {user.id}. "
-            f"Verification token: {token}",
-        )
+        logger.info("Verification requested for user %s (%s).", user.id, user.email)
 
 
 async def get_user_manager(

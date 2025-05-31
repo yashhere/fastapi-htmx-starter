@@ -14,9 +14,10 @@
     <!-- Create Item Form (initially hidden) -->
     <div id="create-item-form" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
       <h3 class="text-lg font-semibold mb-4">Create New Item</h3>
-      <form hx-post="/items"
-            hx-target="#items-table tbody"
-            hx-swap="afterbegin"
+      <form hx-post="{{ url_for("create_item") }}?page={{ page or 1 }}&per_page={{ per_page or 10 }}{%- if search -%}&search={{ search }}{%- endif -%}"
+            hx-ext="json-enc"
+            hx-target="#items-container"
+            hx-swap="innerHTML"
             hx-on::after-request="if(event.detail.successful) { this.reset(); toggleCreateForm(); }"
             class="space-y-4">
         <div>
@@ -48,7 +49,7 @@
     </div>
     <!-- Search and Filters -->
     <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-      <form hx-get="/items"
+      <form hx-get="{{ url_for("list_items") }}"
             hx-target="#items-container"
             hx-trigger="input changed delay:300ms, submit"
             hx-push-url="true"
@@ -68,8 +69,8 @@
       </form>
     </div>
     <!-- Items Container -->
-    <div id="items-container" class="bg-white rounded-lg shadow-md">
-      <div class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-50">
+    <div id="items-container" class="bg-white rounded-lg shadow-md relative">
+      <div class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75 hidden">
         <div class="text-lg font-semibold text-blue-600">Loading...</div>
       </div>
       {% include "items/_table.jinja2" %}

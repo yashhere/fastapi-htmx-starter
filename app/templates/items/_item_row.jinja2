@@ -6,13 +6,13 @@
     <div class="text-sm text-gray-500">{{ item.description or "No description" }}</div>
   </td>
   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-    <button hx-get="/items/{{ item.id }}/edit"
+    <button hx-get="{{ url_for('get_edit_item_form', item_id=item.id) }}"
             hx-target="#item-{{ item.id }}"
             hx-swap="outerHTML"
             class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-    <button hx-delete="/items/{{ item.id }}"
-            hx-target="#item-{{ item.id }}"
-            hx-swap="outerHTML"
+    <button hx-delete="{{ url_for('delete_item', item_id=item.id) }}?page={{ page or 1 }}&per_page={{ per_page or 10 }}{%- if search -%}&search={{ search }}{%- endif -%}"
+            hx-target="#items-container"
+            hx-swap="innerHTML"
             hx-confirm="Are you sure you want to delete this item?"
             class="text-red-600 hover:text-red-900">Delete</button>
   </td>

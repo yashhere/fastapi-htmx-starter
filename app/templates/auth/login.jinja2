@@ -6,6 +6,13 @@
   <div class="max-w-md mx-auto">
     <div class="bg-white rounded-lg shadow-md p-6">
       <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+
+      {% if request.query_params.get('registered') == 'true' %}
+        <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          <p class="text-sm">Account created successfully! Please log in with your credentials.</p>
+        </div>
+      {% endif %}
+
       <div id="auth-form-messages" class="mb-4"></div>
       <form id="login-form"
             hx-post="/auth/cookie/login"
@@ -42,23 +49,32 @@
     </div>
   </div>
   <script>
-      document.body.addEventListener("htmx:afterOnLoad", function(evt) {
+      document.getElementById('login-form').addEventListener("htmx:afterRequest", function(evt) {
           const xhr = evt.detail.xhr;
           const target = evt.detail.target;
 
-          if (xhr.status === 302 || xhr.status === 200) {
-              if (xhr.responseURL && !xhr.responseURL.includes('/auth/')) {
-                  // Successful login redirect
-                  htmx.trigger(document.body, 'userLoggedIn');
-                  window.location.href = xhr.responseURL;
-              } else if (target && target.id === 'auth-form-messages') {
-                  // Handle form validation errors
-                  if (xhr.responseText.includes('error') || xhr.responseText.includes('invalid')) {
-                      target.innerHTML = '<div class="text-red-600 text-sm">' + xhr.responseText + '</div>';
+          if (xhr.status === 204) {
+              // Successful login (FastAPI Users returns 204 for successful cookie login)
+              window.location.href = '/';
+          } else if (xhr.status === 400 && target && target.id === 'auth-form-messages') {
+              // Handle login errors
+              try {
+                  const response = JSON.parse(xhr.responseText);
+                  let errorMessage = 'Login failed. ';
+
+                  if (response.detail === 'LOGIN_BAD_CREDENTIALS') {
+                      errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+                  } else if (response.detail === 'LOGIN_USER_NOT_VERIFIED') {
+                      errorMessage = 'Please verify your email address before logging in.';
+                  } else if (response.detail) {
+                      errorMessage += response.detail;
                   } else {
-                      target.innerHTML = '<div class="text-green-600 text-sm">Login successful!</div>';
+                      errorMessage += 'Please check your credentials and try again.';
                   }
 
+                  target.innerHTML = '<div class="text-red-600 text-sm">' + errorMessage + '</div>';
+              } catch (e) {
+                  target.innerHTML = '<div class="text-red-600 text-sm">Login failed. Please try again.</div>';
               }
           }
       });

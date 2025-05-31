@@ -1,8 +1,9 @@
 from typing import Optional
 
+import sqlalchemy.sql.functions
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import is_htmx
@@ -35,7 +36,7 @@ async def list_items(
         query = query.where(Item.title.ilike(f"%{search}%"))
 
     # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
+    count_query = select(sqlalchemy.sql.functions.count()).select_from(query.subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
@@ -52,6 +53,14 @@ async def list_items(
     has_prev = page > 1
     has_next = page < total_pages
 
+    # Calculate display values for pagination
+    start_item = ((page - 1) * per_page) + 1 if total > 0 else 0
+    end_item = min(page * per_page, total)
+
+    # Calculate page range for pagination links
+    page_range_start = max(1, page - 2)
+    page_range_end = min(total_pages + 1, page + 3)
+
     context = {
         "request": request,
         "items": items,
@@ -62,7 +71,11 @@ async def list_items(
         "total_pages": total_pages,
         "has_prev": has_prev,
         "has_next": has_next,
-        "current_user": user,
+        "start_item": start_item,
+        "end_item": end_item,
+        "page_range_start": page_range_start,
+        "page_range_end": page_range_end,
+        "user": user,
     }
 
     if htmx:
@@ -71,7 +84,7 @@ async def list_items(
     return templates.TemplateResponse("items/index.jinja2", context)
 
 
-@router.post("", response_class=HTMLResponse)
+@router.post("", response_class=HTMLResponse, name="create_item")
 async def create_item(
     request: Request,
     item_data: ItemCreate,
@@ -90,14 +103,66 @@ async def create_item(
     await db.commit()
     await db.refresh(item)
 
-    # Return the new item row
-    return templates.TemplateResponse(
-        "items/_item_row.jinja2",
-        {"request": request, "item": item, "current_user": user},
-    )
+    # Get current search and pagination context
+    search = request.query_params.get("search")
+    page = int(request.query_params.get("page", 1))
+    per_page = int(request.query_params.get("per_page", 10))
+
+    # Recalculate the items list and pagination after creation
+    query = select(Item).where(Item.owner_id == user.id)
+    if search:
+        query = query.where(Item.title.ilike(f"%{search}%"))
+
+    # Get updated total count
+    count_query = select(sqlalchemy.sql.functions.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Calculate updated pagination info
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+
+    # For new items, we typically want to show the first page where the item appears
+    # Since items are usually ordered by creation time (newest first), go to page 1
+    page = 1
+
+    # Apply pagination
+    offset = (page - 1) * per_page
+    query = query.offset(offset).limit(per_page)
+
+    # Execute query for updated items
+    result = await db.execute(query)
+    items = result.scalars().all()
+
+    # Calculate pagination display values
+    has_prev = page > 1
+    has_next = page < total_pages
+    start_item = ((page - 1) * per_page) + 1 if total > 0 else 0
+    end_item = min(page * per_page, total)
+    page_range_start = max(1, page - 2)
+    page_range_end = min(total_pages + 1, page + 3)
+
+    context = {
+        "request": request,
+        "items": items,
+        "search": search or "",
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": has_prev,
+        "has_next": has_next,
+        "start_item": start_item,
+        "end_item": end_item,
+        "page_range_start": page_range_start,
+        "page_range_end": page_range_end,
+        "current_user": user,
+    }
+
+    # Return updated table
+    return templates.TemplateResponse("items/_table.jinja2", context)
 
 
-@router.get("/{item_id}/edit", response_class=HTMLResponse)
+@router.get("/{item_id}/edit", response_class=HTMLResponse, name="get_edit_item_form")
 async def get_edit_item_form(
     request: Request,
     item_id: int,
@@ -120,7 +185,7 @@ async def get_edit_item_form(
     )
 
 
-@router.put("/{item_id}", response_class=HTMLResponse)
+@router.put("/{item_id}", response_class=HTMLResponse, name="update_item")
 async def update_item(
     request: Request,
     item_id: int,
@@ -147,14 +212,26 @@ async def update_item(
     await db.commit()
     await db.refresh(item)
 
-    # Return updated item row
+    # Get pagination context from query params for consistency
+    search = request.query_params.get("search", "")
+    page = int(request.query_params.get("page", 1))
+    per_page = int(request.query_params.get("per_page", 10))
+
+    # Return updated item row with pagination context
     return templates.TemplateResponse(
         "items/_item_row.jinja2",
-        {"request": request, "item": item, "current_user": user},
+        {
+            "request": request,
+            "item": item,
+            "current_user": user,
+            "search": search,
+            "page": page,
+            "per_page": per_page,
+        },
     )
 
 
-@router.delete("/{item_id}", response_class=HTMLResponse)
+@router.delete("/{item_id}", response_class=HTMLResponse, name="delete_item")
 async def delete_item(
     request: Request,
     item_id: int,
@@ -174,11 +251,66 @@ async def delete_item(
     await db.delete(item)
     await db.commit()
 
-    # Return empty response (item row will be removed by HTMX)
-    return HTMLResponse(content="", status_code=200)
+    # Get current page and search from query params to maintain state
+    search = request.query_params.get("search")
+    page = int(request.query_params.get("page", 1))
+    per_page = int(request.query_params.get("per_page", 10))
+
+    # Recalculate the items list and pagination after deletion
+    query = select(Item).where(Item.owner_id == user.id)
+    if search:
+        query = query.where(Item.title.ilike(f"%{search}%"))
+
+    # Get updated total count
+    count_query = select(sqlalchemy.sql.functions.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Calculate updated pagination info
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+
+    # If current page is now beyond the total pages, go to the last page
+    if page > total_pages and total_pages > 0:
+        page = total_pages
+
+    # Apply pagination
+    offset = (page - 1) * per_page
+    query = query.offset(offset).limit(per_page)
+
+    # Execute query for updated items
+    result = await db.execute(query)
+    items = result.scalars().all()
+
+    # Calculate pagination display values
+    has_prev = page > 1
+    has_next = page < total_pages
+    start_item = ((page - 1) * per_page) + 1 if total > 0 else 0
+    end_item = min(page * per_page, total)
+    page_range_start = max(1, page - 2)
+    page_range_end = min(total_pages + 1, page + 3)
+
+    context = {
+        "request": request,
+        "items": items,
+        "search": search or "",
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": has_prev,
+        "has_next": has_next,
+        "start_item": start_item,
+        "end_item": end_item,
+        "page_range_start": page_range_start,
+        "page_range_end": page_range_end,
+        "current_user": user,
+    }
+
+    # Return updated table
+    return templates.TemplateResponse("items/_table.jinja2", context)
 
 
-@router.get("/{item_id}/cancel", response_class=HTMLResponse)
+@router.get("/{item_id}/cancel", response_class=HTMLResponse, name="cancel_edit_item")
 async def cancel_edit_item(
     request: Request,
     item_id: int,
@@ -195,8 +327,20 @@ async def cancel_edit_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    # Return the item row in view mode
+    # Get pagination context from query params for consistency
+    search = request.query_params.get("search", "")
+    page = int(request.query_params.get("page", 1))
+    per_page = int(request.query_params.get("per_page", 10))
+
+    # Return the item row in view mode with pagination context
     return templates.TemplateResponse(
         "items/_item_row.jinja2",
-        {"request": request, "item": item, "current_user": user},
+        {
+            "request": request,
+            "item": item,
+            "current_user": user,
+            "search": search,
+            "page": page,
+            "per_page": per_page,
+        },
     )

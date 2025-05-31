@@ -1,10 +1,11 @@
+from uuid import UUID
+
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import (
     AuthenticationBackend,
     CookieTransport,
 )
 from fastapi_users.authentication.strategy import JWTStrategy
-from uuid import UUID
 
 from app.core.config import settings
 from app.models.user import User, get_user_manager

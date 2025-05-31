@@ -8,7 +8,8 @@
       <h2 class="text-2xl font-bold text-center mb-6">Create Account</h2>
       <div id="auth-form-messages" class="mb-4"></div>
       <form id="register-form"
-            hx-post="/auth/register"
+            hx-post="{{ url_for("auth_register") }}"
+            hx-ext="json-enc"
             hx-target="#auth-form-messages"
             hx-swap="innerHTML"
             class="space-y-4">
@@ -44,28 +45,28 @@
     </div>
   </div>
   <script>
-      const form = document.getElementById('register-form');
+      document.getElementById('register-form').addEventListener("htmx:responseError", function(evt) {
+          evt.stopPropagation();
 
-      document.body.addEventListener("htmx:afterOnLoad", function(evt) {
           const xhr = evt.detail.xhr;
           const target = evt.detail.target;
 
-          if (xhr.status === 302 || xhr.status === 200) {
-              if (xhr.responseURL && !xhr.responseURL.includes('/auth/')) {
-                  // Successful registration redirect
-                  htmx.trigger(document.body, 'userLoggedIn');
-                  window.location.href = xhr.responseURL;
-              } else if (target && target.id === 'auth-form-messages') {
-                  // Handle form validation errors or success messages
-                  if (xhr.responseText.includes('error') || xhr.responseText.includes('already exists')) {
-                      target.innerHTML = '<div class="text-red-600 text-sm">' + xhr.responseText + '</div>';
-                  } else if (xhr.responseText.includes('success') || xhr.responseText.includes('created')) {
-                      target.innerHTML = '<div class="text-green-600 text-sm">Account created successfully!</div>';
-                      if (form) {
-                          form.reset();
-                      }
+          if (xhr.status === 400 && target && target.id === 'auth-form-messages') {
+              try {
+                  const response = JSON.parse(xhr.responseText);
+                  let errorMessage = 'Registration failed. ';
+
+                  if (response.detail === 'REGISTER_USER_ALREADY_EXISTS') {
+                      errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+                  } else if (response.detail) {
+                      errorMessage += response.detail;
+                  } else {
+                      errorMessage += 'Please check your information and try again.';
                   }
 
+                  target.innerHTML = '<div class="text-red-600 text-sm">' + errorMessage + '</div>';
+              } catch (e) {
+                  target.innerHTML = '<div class="text-red-600 text-sm">Registration failed. Please try again.</div>';
               }
           }
       });

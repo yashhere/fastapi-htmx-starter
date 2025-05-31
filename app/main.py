@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, HTTPException, Request, Response, Depends
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -17,7 +17,6 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.templates import templates
 from app.core.users import auth_backend, fastapi_users
-from app.schemas.user import UserCreate, UserRead
 from app.models.user import User
 
 # Configure logging
@@ -27,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
-    # Log the first few characters of the secret key to verify stability
+    # Log startup information (server logs only, not web pages)
     key_start = settings.SECRET_KEY[: min(len(settings.SECRET_KEY), 8)]
+    logger.info("Starting FastAPI HTMX Starter application")
     logger.info("Using SECRET_KEY starting with: %s...", key_start)
     logger.info(
         "Ensure SECRET_KEY is set persistently in your .env file "
@@ -48,23 +48,19 @@ BASE_DIR = Path(__file__).resolve().parent
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-# Include the routers
 # Auth routes (login, logout) - using the chosen backend (cookie in this case)
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/auth/cookie",
     tags=["auth"],
 )
-# Registration routes
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["auth"],
-)
+
 # User management routes (CRUD) - e.g., /users/me
 app.include_router(user_api_router.router)
-# Custom HTML-serving auth routes (/login, /register pages)
-app.include_router(auth_api_router.router)
+
+# Custom HTML-serving auth routes and custom /register endpoint
+app.include_router(auth_api_router.router, prefix="/auth")
+
 # Items CRUD routes
 app.include_router(
     items_api_router.router,
@@ -115,17 +111,6 @@ async def index(
     user: User | None = Depends(fastapi_users.current_user(optional=True)),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
-        "index.jinja2", {"request": request, "user": user}
-    )
-
-
-@app.get("/auth-links")
-async def get_auth_links(
-    request: Request,
-    user: User | None = Depends(fastapi_users.current_user(optional=True)),
-) -> HTMLResponse:
-    """Return auth links partial for dynamic navbar updates."""
-    return templates.TemplateResponse(
-        "partials/auth_links.jinja2",
+        "index.jinja2",
         {"request": request, "user": user},
     )

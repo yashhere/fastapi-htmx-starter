@@ -17,18 +17,61 @@
   </head>
   <body class="bg-gray-100">
     <nav class="bg-blue-600 p-4 text-white shadow-md">
-      <div class="container mx-auto flex items-center justify-between">
-        <a href="{{ url_for("index") }}" class="text-xl font-bold">FastAPI HTMX Starter</a>
-        <div class="space-x-4">
-          <a href="{{ url_for("index") }}" class="hover:text-blue-200">Home</a>
-          <a href="{{ url_for("list_items") }}" class="hover:text-blue-200">Items</a>
-          <span id="auth-links-container"
-                hx-get="/auth-links"
-                hx-trigger="load, userLoggedIn from:body, userLoggedOut from:body"
-                hx-swap="innerHTML"
-                class="inline-block align-middle">
-            <span class="htmx-indicator">Loading...</span>
-          </span>
+      <div class="container mx-auto">
+        <div class="flex items-center justify-between">
+          <a href="{{ url_for("index") }}" class="text-xl font-bold">FastAPI HTMX Starter</a>
+
+          <!-- Mobile menu button -->
+          <button id="mobile-menu-button"
+                  class="md:hidden flex items-center px-3 py-2 border rounded text-blue-200 border-blue-400 hover:text-white hover:border-white">
+            <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <title>Menu</title>
+              <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
+            </svg>
+          </button>
+
+          <!-- Desktop menu -->
+          <div class="hidden md:flex md:items-center md:space-x-4">
+            <a href="{{ url_for("index") }}" class="hover:text-blue-200">Home</a>
+            <a href="{{ url_for("list_items") }}" class="hover:text-blue-200">Items</a>
+            {% if user %}
+              <a href="{{ url_for("user_profile") }}" class="hover:text-blue-200">Profile</a>
+              <span class="text-sm">Hello, {{ user.email }}</span>
+              <button hx-post="{{ url_for("auth_logout") }}"
+                      hx-confirm="Are you sure you want to logout?"
+                      class="hover:text-blue-200 ml-2 bg-transparent border-none cursor-pointer text-white underline">
+                Logout
+              </button>
+            {% else %}
+              <a href="{{ url_for("auth_login_page") }}" class="hover:text-blue-200">Login</a>
+              <a href="{{ url_for("auth_register_page") }}" class="hover:text-blue-200 ml-2">Register</a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Mobile menu (hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden mt-4">
+          <div class="flex flex-col space-y-2 pb-4">
+            <a href="{{ url_for("index") }}" class="block hover:text-blue-200 py-2 px-3 border-b border-blue-500">Home</a>
+            <a href="{{ url_for("list_items") }}"
+               class="block hover:text-blue-200 py-2 px-3 border-b border-blue-500">Items</a>
+            {% if user %}
+              <a href="{{ url_for("user_profile") }}"
+                 class="block hover:text-blue-200 py-2 px-3 border-b border-blue-500">Profile</a>
+              <div class="py-2 px-3 border-b border-blue-500">
+                <span class="text-sm text-blue-200">Hello, {{ user.email }}</span>
+              </div>
+              <button hx-post="{{ url_for("auth_logout") }}"
+                      hx-confirm="Are you sure you want to logout?"
+                      class="block text-left hover:text-blue-200 py-2 px-3 bg-transparent border-none cursor-pointer text-white underline">
+                Logout
+              </button>
+            {% else %}
+              <a href="{{ url_for("auth_login_page") }}"
+                 class="block hover:text-blue-200 py-2 px-3 border-b border-blue-500">Login</a>
+              <a href="{{ url_for("auth_register_page") }}" class="block hover:text-blue-200 py-2 px-3">Register</a>
+            {% endif %}
+          </div>
         </div>
       </div>
       <div id="global-messages" class="container mx-auto mt-2 text-center text-white"></div>
@@ -38,16 +81,47 @@
       {% endblock content %}
     </main>
     <script>
-        // Global HTMX error handling
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+
+                // Close mobile menu when clicking on a link
+                const mobileMenuLinks = mobileMenu.querySelectorAll('a, button');
+                mobileMenuLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        mobileMenu.classList.add('hidden');
+                    });
+                });
+            }
+        });
+
+        // Global HTMX error handling - only for actual server errors (5xx), not validation errors (4xx)
         document.body.addEventListener("htmx:responseError", function(evt) {
-            console.error("Response Error:", evt.detail.xhr);
-            const globalMessages = document.getElementById("global-messages");
-            if (globalMessages) {
-                globalMessages.innerHTML =
-                    '<p class="text-red-500 bg-white p-2 rounded">Server error occurred. Please try again.</p>';
-                setTimeout(() => {
-                    globalMessages.innerHTML = "";
-                }, 5000);
+            const xhr = evt.detail.xhr;
+            const target = evt.detail.target;
+
+            // Only show global error for actual server errors (5xx), not client errors (4xx)
+            // Also skip if the target has specific error handling (like auth forms)
+            if (xhr.status >= 500 || (!target.closest('#register-form') && !target.closest('#login-form') && xhr.status >= 400)) {
+                console.error("Response Error:", xhr);
+                const globalMessages = document.getElementById("global-messages");
+                if (globalMessages) {
+                    let errorMessage = "An error occurred. Please try again.";
+                    if (xhr.status >= 500) {
+                        errorMessage = "Server error occurred. Please try again.";
+                    }
+                    globalMessages.innerHTML =
+                        '<p class="text-red-500 bg-white p-2 rounded">' + errorMessage + '</p>';
+                    setTimeout(() => {
+                        globalMessages.innerHTML = "";
+                    }, 5000);
+                }
             }
         });
 

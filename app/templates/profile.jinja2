@@ -1,0 +1,259 @@
+{% extends "base.jinja2" %}
+{% block title %}
+  Profile - FastAPI HTMX Starter
+{% endblock title %}
+{% block content %}
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <!-- Profile Header -->
+      <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white rounded-full p-3">
+            <svg class="w-12 h-12 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="text-white">
+            <h1 class="text-3xl font-bold">Your Profile</h1>
+            <p class="text-blue-100">Manage your account information</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Content -->
+      <div class="p-6">
+        <!-- Account Information Section -->
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Account Information</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- User ID -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+              <div class="bg-gray-50 px-3 py-2 rounded-md border">
+                <code class="text-sm text-gray-600">{{ user.id }}</code>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <div id="email-display" class="bg-gray-50 px-3 py-2 rounded-md border flex justify-between items-center">
+                <span class="text-gray-800">{{ user.email }}</span>
+                <button onclick="editField('email', '{{ user.email }}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                  Edit
+                </button>
+              </div>
+              <!-- Edit Form (Hidden by default) -->
+              <div id="email-edit" class="hidden">
+                <form hx-patch="{{ url_for("update_user_email") }}"
+                      hx-ext="json-enc"
+                      hx-target="#email-display"
+                      hx-swap="outerHTML"
+                      class="flex space-x-2">
+                  <input type="email"
+                         name="email"
+                         value="{{ user.email }}"
+                         required
+                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm">
+                    Save
+                  </button>
+                  <button type="button"
+                          onclick="cancelEdit('email')"
+                          class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded-md text-sm">
+                    Cancel
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Account Status -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
+              <div class="flex space-x-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if user.is_active else 'bg-red-100 text-red-800' }}">
+                  {{ 'Active' if user.is_active else 'Inactive' }}
+                </span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-blue-100 text-blue-800' if user.is_verified else 'bg-yellow-100 text-yellow-800' }}">
+                  {{ 'Verified' if user.is_verified else 'Unverified' }}
+                </span>
+                {% if user.is_superuser %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Superuser
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Registration Date (if available) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+              <div class="bg-gray-50 px-3 py-2 rounded-md border">
+                <span class="text-gray-800">
+                  {% if user.created_at %}
+                    {{ user.created_at.strftime("%B %d, %Y") }}
+                  {% else %}
+                    Not available
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Account Statistics</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-blue-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <div class="p-2 bg-blue-500 rounded-lg">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                    </path>
+                  </svg>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-blue-600">Total Items</p>
+                  <p class="text-2xl font-bold text-blue-900">{{ user.items|length if user.items else 0 }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-green-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <div class="p-2 bg-green-500 rounded-lg">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                  </svg>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-green-600">Account Health</p>
+                  <p class="text-2xl font-bold text-green-900">
+                    {{ 'Excellent' if user.is_verified and user.is_active else 'Good' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-purple-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <div class="p-2 bg-purple-500 rounded-lg">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                  </svg>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-purple-600">Security Level</p>
+                  <p class="text-2xl font-bold text-purple-900">{{ 'High' if user.is_verified else 'Medium' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Security & Privacy</h2>
+          <div class="space-y-4">
+            <!-- Change Password -->
+            <div class="border rounded-lg p-4">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="font-medium text-gray-800">Password</h3>
+                  <p class="text-sm text-gray-600">Last updated: •••••••••</p>
+                </div>
+                <button onclick="togglePasswordForm()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                  Change Password
+                </button>
+              </div>
+
+              <!-- Password Change Form (Hidden by default) -->
+              <div id="password-form" class="mt-4 hidden">
+                <form hx-patch="{{ url_for("update_user_password") }}"
+                      hx-ext="json-enc"
+                      hx-target="#password-form"
+                      hx-swap="innerHTML"
+                      class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input type="password"
+                           name="current_password"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input type="password"
+                           name="password"
+                           required
+                           minlength="8"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input type="password"
+                           name="confirm_password"
+                           required
+                           minlength="8"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div class="flex space-x-2">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                      Update Password
+                    </button>
+                    <button type="button"
+                            onclick="togglePasswordForm()"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="border-t pt-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for("list_items") }}"
+               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+              View My Items
+            </a>
+            <a href="{{ url_for("list_items") }}"
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm">
+              Create New Item
+            </a>
+            <button hx-post="{{ url_for("auth_logout") }}"
+                    hx-confirm="Are you sure you want to logout?"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+      function editField(fieldName, currentValue) {
+          document.getElementById(fieldName + '-display').classList.add('hidden');
+          document.getElementById(fieldName + '-edit').classList.remove('hidden');
+      }
+
+      function cancelEdit(fieldName) {
+          document.getElementById(fieldName + '-display').classList.remove('hidden');
+          document.getElementById(fieldName + '-edit').classList.add('hidden');
+      }
+
+      function togglePasswordForm() {
+          const form = document.getElementById('password-form');
+          form.classList.toggle('hidden');
+      }
+  </script>
+{% endblock content %}

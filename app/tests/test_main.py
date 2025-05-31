@@ -14,7 +14,7 @@ def test_health_check():
 def test_login_page():
     """Test that the login page loads."""
     with TestClient(app) as client:
-        response = client.get("/login")
+        response = client.get("/auth/login")
         assert response.status_code == 200
         assert "Login" in response.text
 
@@ -22,7 +22,7 @@ def test_login_page():
 def test_register_page():
     """Test that the register page loads."""
     with TestClient(app) as client:
-        response = client.get("/register")
+        response = client.get("/auth/register")
         assert response.status_code == 200
         assert "Create Account" in response.text
 

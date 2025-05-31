@@ -33,22 +33,22 @@
   {% if total_pages > 1 %}
     <div class="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
       <div class="text-sm text-gray-700">
-        Showing {{ ((page - 1) * per_page) + 1 }} to {{ min(page * per_page, total) }} of {{ total }} results
+        Showing {{ start_item }} to {{ end_item }} of {{ total }} results
       </div>
       <div class="flex space-x-1">
         {% if has_prev %}
-          <a hx-get="/items?page={{ page - 1 }}{%- if search -%}&search={{ search }}{%- endif -%}"
+          <a hx-get="{{ url_for("list_items") }}?page={{ page - 1 }}{%- if search -%}&search={{ search }}{%- endif -%}"
              hx-target="#items-container"
              hx-push-url="true"
              class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
             Previous
           </a>
         {% endif %}
-        {% for p in range(max(1, page - 2), min(total_pages + 1, page + 3)) %}
+        {% for p in range(page_range_start, page_range_end) %}
           {% if p == page %}
             <span class="px-3 py-1 text-sm bg-blue-600 text-white rounded">{{ p }}</span>
           {% else %}
-            <a hx-get="/items?page={{ p }}{%- if search -%}&search={{ search }}{%- endif -%}"
+            <a hx-get="{{ url_for("list_items") }}?page={{ p }}{%- if search -%}&search={{ search }}{%- endif -%}"
                hx-target="#items-container"
                hx-push-url="true"
                class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
@@ -57,7 +57,7 @@
           {% endif %}
         {% endfor %}
         {% if has_next %}
-          <a hx-get="/items?page={{ page + 1 }}{%- if search -%}&search={{ search }}{%- endif -%}"
+          <a hx-get="{{ url_for("list_items") }}?page={{ page + 1 }}{%- if search -%}&search={{ search }}{%- endif -%}"
              hx-target="#items-container"
              hx-push-url="true"
              class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
