@@ -91,7 +91,7 @@ jobs:
 
       - name: Run isort import sorting check
         run: |
-          uv run isort --check-only app/
+          uv run isort --profile black --check-only app/
 
   type-check:
     runs-on: ubuntu-latest

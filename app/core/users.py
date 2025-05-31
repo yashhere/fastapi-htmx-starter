@@ -1,10 +1,7 @@
 from uuid import UUID
 
 from fastapi_users import FastAPIUsers
-from fastapi_users.authentication import (
-    AuthenticationBackend,
-    CookieTransport,
-)
+from fastapi_users.authentication import AuthenticationBackend, CookieTransport
 from fastapi_users.authentication.strategy import JWTStrategy
 
 from app.core.config import settings

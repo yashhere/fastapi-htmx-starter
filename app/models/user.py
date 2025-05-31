@@ -5,10 +5,7 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, UUIDIDMixin
-from fastapi_users.db import (
-    SQLAlchemyBaseUserTableUUID,
-    SQLAlchemyUserDatabase,
-)
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from sqlalchemy import DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
