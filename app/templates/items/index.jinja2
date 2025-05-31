@@ -1,0 +1,84 @@
+{% extends "base.jinja2" %}
+{% block title %}
+  Items - FastAPI HTMX Starter
+{% endblock title %}
+{% block content %}
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Your Items</h1>
+      <button onclick="toggleCreateForm()"
+              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+        Add New Item
+      </button>
+    </div>
+    <!-- Create Item Form (initially hidden) -->
+    <div id="create-item-form" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+      <h3 class="text-lg font-semibold mb-4">Create New Item</h3>
+      <form hx-post="/items"
+            hx-target="#items-table tbody"
+            hx-swap="afterbegin"
+            hx-on::after-request="if(event.detail.successful) { this.reset(); toggleCreateForm(); }"
+            class="space-y-4">
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <input type="text"
+                 id="title"
+                 name="title"
+                 required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea id="description"
+                    name="description"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div class="flex space-x-2">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+            Create Item
+          </button>
+          <button type="button"
+                  onclick="toggleCreateForm()"
+                  class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+      <form hx-get="/items"
+            hx-target="#items-container"
+            hx-trigger="input changed delay:300ms, submit"
+            hx-push-url="true"
+            class="flex space-x-4">
+        <div class="flex-1">
+          <input type="text"
+                 name="search"
+                 value="{{ search }}"
+                 placeholder="Search items..."
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <button type="button"
+                onclick="this.form.reset(); htmx.trigger(this.form, 'submit')"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md">
+          Clear
+        </button>
+      </form>
+    </div>
+    <!-- Items Container -->
+    <div id="items-container" class="bg-white rounded-lg shadow-md">
+      <div class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-50">
+        <div class="text-lg font-semibold text-blue-600">Loading...</div>
+      </div>
+      {% include "items/_table.jinja2" %}
+    </div>
+  </div>
+  <script>
+      function toggleCreateForm() {
+          const form = document.getElementById('create-item-form');
+          form.classList.toggle('hidden');
+      }
+  </script>
+{% endblock content %}

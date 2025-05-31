@@ -1,0 +1,63 @@
+{% extends "base.jinja2" %}
+{% block title %}
+  Home - FastAPI HTMX Starter
+{% endblock title %}
+{% block content %}
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Welcome to FastAPI HTMX Starter</h1>
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Getting Started</h2>
+      <p class="text-gray-600 mb-4">
+        This is a modern starter template for building web applications with FastAPI, HTMX, and TailwindCSS.
+      </p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <h3 class="font-semibold text-blue-800 mb-2">🔐 Authentication</h3>
+          <p class="text-sm text-gray-600">
+            Complete user authentication system with login, registration, and user management.
+          </p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <h3 class="font-semibold text-green-800 mb-2">⚡ HTMX Integration</h3>
+          <p class="text-sm text-gray-600">
+            Dynamic frontend interactions without heavy JavaScript frameworks.
+          </p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <h3 class="font-semibold text-purple-800 mb-2">🗄️ Database Ready</h3>
+          <p class="text-sm text-gray-600">SQLAlchemy 2.0 with async support and Alembic migrations.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-lg">
+          <h3 class="font-semibold text-orange-800 mb-2">🎨 TailwindCSS</h3>
+          <p class="text-sm text-gray-600">Utility-first CSS framework for rapid UI development.</p>
+        </div>
+      </div>
+    </div>
+    {% if request.user %}
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div class="space-x-4">
+          <a href="{{ url_for("list_items") }}"
+             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-block">
+            View Your Items
+          </a>
+          <a href="{{ url_for("user_profile") }}"
+             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg inline-block">
+            Profile Settings
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="bg-white rounded-lg shadow-md p-6 text-center">
+        <h2 class="text-xl font-semibold mb-4">Get Started</h2>
+        <p class="text-gray-600 mb-4">Create an account or log in to start using the application.</p>
+        <div class="space-x-4">
+          <a href="{{ url_for("auth_register_page") }}"
+             class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-block">Sign Up</a>
+          <a href="{{ url_for("auth_login_page") }}"
+             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-block">Log In</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock content %}

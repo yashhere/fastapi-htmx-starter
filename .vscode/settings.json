@@ -1,0 +1,72 @@
+{
+    "files.exclude": {
+        ".aider*": true,
+        "*_cache": true,
+        "**/__pycache__": true,
+        "**/.coverage": true,
+        "**/*.egg-info": true
+    },
+    "editor.rulers": [
+        88
+    ],
+    "files.associations": {
+        "*.jinja2": "jinja"
+    },
+    "emmet.includeLanguages": {
+        "jinja2": "html",
+        "jinja-html": "html",
+        "django-html": "html"
+    },
+    "[html]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[jinja]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[jinja2]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[yaml]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[json]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
+    },
+    "[html][jinja][jinja-html][django-html]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "monosans.djlint",
+        "editor.detectIndentation": false,
+        "editor.linkedEditing": true,
+        "editor.tabSize": 2,
+        "djlint.enableLinting": true
+    },
+    "djlint.enableLinting": false,
+    "djlint.closeVoidTags": true,
+    "djlint.formatAttributeTemplateTags": true,
+    "djlint.formatCss": true,
+    "djlint.formatJs": true,
+    "djlint.lineBreakAfterMultilineTag": false,
+    "djlint.maxBlankLines": 2,
+    "djlint.maxLineLength": 100,
+    "djlint.maxAttributeLength": 100,
+    "python.testing.pytestArgs": [
+        "app"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

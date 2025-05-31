@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+          content="A modern FastAPI starter template with HTMX, TailwindCSS, and user authentication" />
+    <meta name="keywords" content="FastAPI, HTMX, TailwindCSS, Python, web development, starter template" />
+    <title>
+      {% block title %}
+        FastAPI HTMX Starter
+      {% endblock title %}
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js" crossorigin="anonymous"></script>
+  </head>
+  <body class="bg-gray-100">
+    <nav class="bg-blue-600 p-4 text-white shadow-md">
+      <div class="container mx-auto flex items-center justify-between">
+        <a href="{{ url_for("index") }}" class="text-xl font-bold">FastAPI HTMX Starter</a>
+        <div class="space-x-4">
+          <a href="{{ url_for("index") }}" class="hover:text-blue-200">Home</a>
+          <a href="{{ url_for("list_items") }}" class="hover:text-blue-200">Items</a>
+          <span id="auth-links-container"
+                hx-get="/auth-links"
+                hx-trigger="load, userLoggedIn from:body, userLoggedOut from:body"
+                hx-swap="innerHTML"
+                class="inline-block align-middle">
+            <span class="htmx-indicator">Loading...</span>
+          </span>
+        </div>
+      </div>
+      <div id="global-messages" class="container mx-auto mt-2 text-center text-white"></div>
+    </nav>
+    <main class="container mx-auto mt-8 p-4">
+      {% block content %}
+      {% endblock content %}
+    </main>
+    <script>
+        // Global HTMX error handling
+        document.body.addEventListener("htmx:responseError", function(evt) {
+            console.error("Response Error:", evt.detail.xhr);
+            const globalMessages = document.getElementById("global-messages");
+            if (globalMessages) {
+                globalMessages.innerHTML =
+                    '<p class="text-red-500 bg-white p-2 rounded">Server error occurred. Please try again.</p>';
+                setTimeout(() => {
+                    globalMessages.innerHTML = "";
+                }, 5000);
+            }
+        });
+
+        document.body.addEventListener("htmx:sendError", function(evt) {
+            console.error("Send Error:", evt.detail);
+            const globalMessages = document.getElementById("global-messages");
+            if (globalMessages) {
+                globalMessages.innerHTML =
+                    '<p class="text-red-500 bg-white p-2 rounded">An error occurred sending the request. Check console.</p>';
+            }
+        });
+    </script>
+  </body>
+</html>
