@@ -37,7 +37,7 @@
 This starter template combines the **speed of FastAPI** with the **simplicity of HTMX** to create modern web applications without the complexity of heavyweight JavaScript frameworks. Unlike traditional SPA approaches, this template offers:
 
 - **🎯 Zero JavaScript fatigue** - Build dynamic UIs with simple HTML attributes
-- **⚡ Blazing fast performance** - Server-side rendering with minimal client-side overhead  
+- **⚡ Blazing fast performance** - Server-side rendering with minimal client-side overhead
 - **🔧 Full-stack TypeScript alternative** - Python everywhere with excellent type safety
 - **📱 Progressive enhancement** - Works without JavaScript, enhanced with it
 - **🎨 Modern UI/UX** - TailwindCSS for rapid, responsive design
@@ -85,7 +85,7 @@ This starter template combines the **speed of FastAPI** with the **simplicity of
 
 ### Prerequisites
 
-- **Python 3.12+** 
+- **Python 3.12+**
 - **[uv](https://docs.astral.sh/uv/)** (recommended) or pip for package management
 
 ### 1. 📁 Create Your Project
@@ -304,7 +304,7 @@ pytest --cov=app --cov-report=html
 ### ⚡ HTMX Magic
 ```html
 <!-- Live search without JavaScript -->
-<input hx-get="/search" hx-trigger="keyup changed delay:300ms" 
+<input hx-get="/search" hx-trigger="keyup changed delay:300ms"
        hx-target="#results" placeholder="Search...">
 <div id="results"></div>
 ```

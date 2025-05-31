@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi_users.exceptions import InvalidPasswordException
@@ -26,7 +28,7 @@ async def get_profile_page(
 
     # Load user with items for statistics
     result = await db.execute(
-        select(User).options(selectinload(User.items)).where(User.id == user.id),
+        select(User).options(selectinload(User.items)).where(User.id == user.id)  # type: ignore[arg-type]
     )
     user_with_items = result.scalar_one()
 
@@ -39,7 +41,7 @@ async def get_profile_page(
 # Profile update endpoints
 @router.patch("/profile/email", response_class=HTMLResponse, name="update_user_email")
 async def update_email(
-    email_data: dict,
+    email_data: dict[str, Any],
     user: User = Depends(fastapi_users.current_user(active=True)),
     db: AsyncSession = Depends(get_db),
 ) -> HTMLResponse:
@@ -49,8 +51,8 @@ async def update_email(
         # Check if email is already taken
         existing_user = await db.execute(
             select(User).where(
-                and_(User.email == email_data["email"], User.id != user.id),
-            ),
+                and_(User.email == email_data["email"], User.id != user.id)  # type: ignore[arg-type]
+            )
         )
         if existing_user.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Email already registered")
@@ -90,7 +92,7 @@ async def update_email(
     name="update_user_password",
 )
 async def update_password(
-    password_data: dict,
+    password_data: dict[str, Any],
     user: User = Depends(fastapi_users.current_user(active=True)),
     user_manager: UserManager = Depends(get_user_manager),
     db: AsyncSession = Depends(get_db),
