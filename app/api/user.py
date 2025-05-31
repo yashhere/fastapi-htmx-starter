@@ -28,7 +28,7 @@ async def get_profile_page(
 
     # Load user with items for statistics
     result = await db.execute(
-        select(User).options(selectinload(User.items)).where(User.id == user.id)  # type: ignore[arg-type]
+        select(User).options(selectinload(User.items)).where(User.id == user.id),  # type: ignore[arg-type]
     )
     user_with_items = result.scalar_one()
 
@@ -51,8 +51,8 @@ async def update_email(
         # Check if email is already taken
         existing_user = await db.execute(
             select(User).where(
-                and_(User.email == email_data["email"], User.id != user.id)  # type: ignore[arg-type]
-            )
+                and_(User.email == email_data["email"], User.id != user.id),  # type: ignore[arg-type]
+            ),
         )
         if existing_user.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Email already registered")
