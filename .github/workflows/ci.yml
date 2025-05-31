@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+
+    services:
+      # Optional: PostgreSQL service for more comprehensive testing
+      # postgres:
+      #   image: postgres:15
+      #   env:
+      #     POSTGRES_PASSWORD: postgres
+      #     POSTGRES_DB: test_db
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+      #   ports:
+      #     - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          SECRET_KEY=test-secret-key-for-ci-only-not-secure
+          DATABASE_URL=sqlite+aiosqlite:///./test.db
+          DEBUG=true
+          TESTING=true
+          EOF
+
+      - name: Run database migrations
+        run: |
+          uv run alembic upgrade head
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=app --cov-report=xml --cov-report=term-missing
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+
+      - name: Run ruff linting
+        run: |
+          uv run ruff check app/
+
+      - name: Run ruff formatting check
+        run: |
+          uv run ruff format --check app/
+
+      - name: Run Black formatting check
+        run: |
+          uv run black --check app/
+
+      - name: Run isort import sorting check
+        run: |
+          uv run isort --check-only app/
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+
+      - name: Run MyPy type checking
+        run: |
+          uv run mypy app/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+
+      - name: Run security checks with bandit
+        run: |
+          uv run pip install bandit
+          uv run bandit -r app/ -f json -o bandit-report.json || true
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: bandit-report.json
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, lint, type-check]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          SECRET_KEY=test-secret-key-for-ci-only-not-secure
+          DATABASE_URL=sqlite+aiosqlite:///./test.db
+          DEBUG=false
+          EOF
+
+      - name: Test application startup
+        run: |
+          uv run alembic upgrade head
+          timeout 10s uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
+          path: dist/
