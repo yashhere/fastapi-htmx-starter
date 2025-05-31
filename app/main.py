@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -18,6 +18,7 @@ from app.core.database import init_db
 from app.core.templates import templates
 from app.core.users import auth_backend, fastapi_users
 from app.schemas.user import UserCreate, UserRead
+from app.models.user import User
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Log the first few characters of the secret key to verify stability
     key_start = settings.SECRET_KEY[: min(len(settings.SECRET_KEY), 8)]
-    logger.info(f"Using SECRET_KEY starting with: {key_start}...")
+    logger.info("Using SECRET_KEY starting with: %s...", key_start)
     logger.info(
         "Ensure SECRET_KEY is set persistently in your .env file "
         "for sessions to work across restarts.",
@@ -109,14 +110,22 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
 
 
 @app.get("/")
-async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse("index.jinja2", {"request": request})
+async def index(
+    request: Request,
+    user: User | None = Depends(fastapi_users.current_user(optional=True)),
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "index.jinja2", {"request": request, "user": user}
+    )
 
 
 @app.get("/auth-links")
-async def get_auth_links(request: Request) -> HTMLResponse:
+async def get_auth_links(
+    request: Request,
+    user: User | None = Depends(fastapi_users.current_user(optional=True)),
+) -> HTMLResponse:
     """Return auth links partial for dynamic navbar updates."""
     return templates.TemplateResponse(
         "partials/auth_links.jinja2",
-        {"request": request},
+        {"request": request, "user": user},
     )

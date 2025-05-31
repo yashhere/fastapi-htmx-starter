@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 88
+max-comment-length = 120
+extend-ignore =
+    # Missing docstrings
+    D100, D101, D102, D103, D104, D105, D106, D107,
+    # Missing type annotations
+    ANN001, ANN002, ANN003, ANN201, ANN202, ANN204, ANN205, ANN206,
+    # flake8-bugbear
+    B008
+per-file-ignores =
+    app/tests/*:S101
+    app/cli.py:S

@@ -3,7 +3,10 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, UUIDIDMixin
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
+from fastapi_users.db import (
+    SQLAlchemyBaseUserTableUUID,
+    SQLAlchemyUserDatabase,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
@@ -15,8 +18,9 @@ if TYPE_CHECKING:
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
-    # fastapi-users provides: id, email, hashed_password, is_active, is_superuser,
-    # is_verified. Add any custom fields specific to your application here, for example:
+    # fastapi-users provides: id, email, hashed_password, is_active,
+    # is_superuser, is_verified. Add any custom fields specific to your
+    # application here, for example:
     # first_name: Mapped[str | None] = mapped_column(String(length=50))
     # last_name: Mapped[str | None] = mapped_column(String(length=50))
     items: Mapped[List["Item"]] = relationship(
@@ -48,7 +52,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
         token: str,
         request: Request | None = None,
     ) -> None:
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        print(f"User {user.id} has forgot their password. " f"Reset token: {token}")
 
     async def on_after_request_verify(
         self,

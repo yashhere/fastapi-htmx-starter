@@ -30,6 +30,6 @@ def test_register_page():
 def test_items_requires_auth():
     """Test that items page requires authentication."""
     with TestClient(app) as client:
-        response = client.get("/items")
+        response = client.get("/items", follow_redirects=False)
         # Should redirect to login or return 401
         assert response.status_code in [302, 401]

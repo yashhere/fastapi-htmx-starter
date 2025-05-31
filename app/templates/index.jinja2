@@ -33,15 +33,15 @@
         </div>
       </div>
     </div>
-    {% if request.user %}
+    {% if user %}
       <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
         <div class="space-x-4">
-          <a href="{{ url_for("list_items") }}"
+          <a href="{{ url_for('list_items') }}"
              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-block">
             View Your Items
           </a>
-          <a href="{{ url_for("user_profile") }}"
+          <a href="{{ url_for('user_profile') }}"
              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg inline-block">
             Profile Settings
           </a>
@@ -52,9 +52,9 @@
         <h2 class="text-xl font-semibold mb-4">Get Started</h2>
         <p class="text-gray-600 mb-4">Create an account or log in to start using the application.</p>
         <div class="space-x-4">
-          <a href="{{ url_for("auth_register_page") }}"
+          <a href="{{ url_for('auth_register_page') }}"
              class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-block">Sign Up</a>
-          <a href="{{ url_for("auth_login_page") }}"
+          <a href="{{ url_for('auth_login_page') }}"
              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-block">Log In</a>
         </div>
       </div>

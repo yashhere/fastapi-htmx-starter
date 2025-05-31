@@ -1,11 +1,11 @@
-{% if request.user %}
-  <span class="text-sm">Hello, {{ request.user.email }}</span>
-  <a href="{{ url_for("auth_logout_redirect") }}"
+{% if user %}
+  <span class="text-sm">Hello, {{ user.email }}</span>
+  <a href="{{ url_for('auth_logout_redirect') }}"
      class="hover:text-blue-200 ml-2"
-     hx-post="{{ url_for("auth_logout_redirect") }}"
+     hx-post="{{ url_for('auth_logout_redirect') }}"
      hx-trigger="click"
      hx-on::after-request="htmx.trigger(document.body, 'userLoggedOut')">Logout</a>
 {% else %}
-  <a href="{{ url_for("auth_login_page") }}" class="hover:text-blue-200">Login</a>
-  <a href="{{ url_for("auth_register_page") }}" class="hover:text-blue-200 ml-2">Register</a>
+  <a href="{{ url_for('auth_login_page') }}" class="hover:text-blue-200">Login</a>
+  <a href="{{ url_for('auth_register_page') }}" class="hover:text-blue-200 ml-2">Register</a>
 {% endif %}
